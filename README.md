@@ -34,6 +34,8 @@ MOG2 알고리즘 이용 및 Blur 처리 노이즈 제거
 추운 겨울 날 
 영상 제공 및 ppt 피드백
 
+</br>
+--> 2022.07.13 제 11회 대학생 작품 경진대회 장려상 수상
 
 ## 기대효과
 ![image](https://github.com/JeonSH-Francesco/OpenCV_SmokeDet/assets/112309895/ad38823b-f60b-427b-9ded-41f174e75113)
