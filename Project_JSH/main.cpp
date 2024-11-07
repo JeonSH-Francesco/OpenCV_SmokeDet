@@ -149,20 +149,20 @@ void drawFace(vector<Rect> faces, Mat result) {
 
 void saveSmoke(vector<Rect> faces, Mat result) {
     int i;
-    for (i = 0; i < faces.size(); i++) {                    //탐지된 얼굴만큼 반복. 얼굴 하나면 한번만 수행됨
-        Mat output = result(faces[i]);
-        imwrite("d:/output/smoke.jpg", output);  // 흡연된 이미지를 저장
+    for (i = 0; i < faces.size(); i++) {
+        Rect select(faces[i].x, faces[i].y, faces[i].width, faces[i].height);
+        Mat faceROI = result(select);
+        imwrite("C:/Users/82107/source/repos/Project_JSH/result.jpg", result); //사진이 저장되는 경로
     }
 }
-
-void saveFace(vector<Rect> faces, Mat result) {
+void saveFace(vector<Rect> faces, Mat frame0) {
     int i;
-    for (i = 0; i < faces.size(); i++) {                    //탐지된 얼굴만큼 반복. 얼굴 하나면 한번만 수행됨
-        Mat output = result(faces[i]);
-        imwrite("d:/output/face.jpg", output);  // 얼굴 이미지를 저장
+    for (i = 0; i < faces.size(); i++) {
+        Rect select(faces[i].x, faces[i].y, faces[i].width, faces[i].height);
+        Mat faceROI = frame0(select);
+        imwrite("C:/Users/82107/source/repos/Project_JSH/WhoAreYou.jpg", frame0); //사진이 저장되는 경로
     }
 }
-
 /*
 #include <opencv2/opencv.hpp>   
 #include <Windows.h>      
