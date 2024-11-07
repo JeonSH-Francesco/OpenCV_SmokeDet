@@ -2,8 +2,9 @@
 #include <Windows.h>      
 #include <iostream>
 #include <stdio.h>
+#include <thread>  // C++ thread library
 
-#pragma comment(lib,"winmm.lib")  //PlaySound¸¦ »ç¿ëÇÏ±â À§ÇØ winmm ¶óÀÌºê·¯¸® »ç¿ë
+#pragma comment(lib,"winmm.lib")  //PlaySoundë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ winmm ë¼ì´ë¸ŒëŸ¬ë¦¬ ì‚¬ìš©
 #define CRT_SECURE_NO_WARNINGS
 
 using namespace std;
@@ -13,44 +14,44 @@ using namespace cv;
 #define CAM_HEIGHT 240
 CascadeClassifier face_cascade;
 
-int cnt = 0;   //¿¬±â Å½Áö È½¼ö
-vector<Rect> detectFace(Mat fram0);  // ¾ó±¼ Å½Áö ÇÔ¼ö 
-vector<vector<Rect>> setRoi(vector<Rect> faces);   // ¾ó±¼ ÁÖº¯ÀÇ Roi ¼³Á¤
-void drawFace(vector<Rect> faces, Mat frame0);  //Å½ÁöµÈ ¾ó±¼ ¹İº¹ Å½Áö ÇÔ¼ö
-void detectSmoke(vector<vector<Rect>> roiArray, Mat frame2, Mat frame0);  // ¿¬±â Å½Áö ÇÔ¼ö
-void saveSmoke(vector<Rect> faces, Mat frame0); //Èí¿¬½Ã Èí¿¬ÇàÀ§ ÀúÀåÇÔ¼ö
-void saveFace(vector<Rect> faces, Mat frame0); //Èí¿¬½Ã Èí¿¬ÀÚ ¾ó±¼ ÀúÀåÇÔ¼ö
+int cnt = 0;   //ì—°ê¸° íƒì§€ íšŸìˆ˜
+vector<Rect> detectFace(Mat fram0);  // ì–¼êµ´ íƒì§€ í•¨ìˆ˜ 
+vector<vector<Rect>> setRoi(vector<Rect> faces);   // ì–¼êµ´ ì£¼ë³€ì˜ Roi ì„¤ì •
+void drawFace(vector<Rect> faces, Mat frame0);  //íƒì§€ëœ ì–¼êµ´ ë°˜ë³µ íƒì§€ í•¨ìˆ˜
+void detectSmoke(vector<vector<Rect>> roiArray, Mat frame2, Mat frame0);  // ì—°ê¸° íƒì§€ í•¨ìˆ˜
+void saveSmoke(vector<Rect> faces, Mat frame0); //í¡ì—°ì‹œ í¡ì—°í–‰ìœ„ ì €ì¥í•¨ìˆ˜
+void saveFace(vector<Rect> faces, Mat frame0); //í¡ì—°ì‹œ í¡ì—°ì ì–¼êµ´ ì €ì¥í•¨ìˆ˜
+void playSoundAsync(); // ë¹„ë™ê¸°ì ìœ¼ë¡œ ì‚¬ìš´ë“œë¥¼ ì¬ìƒí•˜ëŠ” í•¨ìˆ˜
 
 int main() {
-    Mat frame0, frame1, frame2, result; // 0: raw, 1: binary(MOG2), 2:binary(MOG2)¿¡¼­ Ãß°¡ ³ëÀÌÁîÁ¦°Å
-    Ptr<BackgroundSubtractor> pMOG2; //MOG2 ¹è°æ »èÁ¦ °´Ã¼
-    vector<Rect> faces; // ¾ó±¼ ÁÂÇ¥.
+    Mat frame0, frame1, frame2, result; // 0: raw, 1: binary(MOG2), 2:binary(MOG2)ì—ì„œ ì¶”ê°€ ë…¸ì´ì¦ˆì œê±°
+    Ptr<BackgroundSubtractor> pMOG2; //MOG2 ë°°ê²½ ì‚­ì œ ê°ì²´
+    vector<Rect> faces; // ì–¼êµ´ ì¢Œí‘œ.
     vector<vector<Rect>> roiArray; //roi
 
     int start = 0;
-    int tr = 0; 
+    int tr = 0;
 
     clock_t timer_s, timer_e;
     double duration;
-    timer_s = clock();  //ÇöÀç ÇÁ·Î¼¼½º°¡ ½ÇÇàµÇ°í Áö±İ±îÁö ÁøÇàµÇ¾î ¿Â ms
-
+    timer_s = clock();  //í˜„ì¬ í”„ë¡œì„¸ìŠ¤ê°€ ì‹¤í–‰ë˜ê³  ì§€ê¸ˆê¹Œì§€ ì§„í–‰ë˜ì–´ ì˜¨ ms
 
     pMOG2 = createBackgroundSubtractorMOG2();
-    VideoCapture capture("d:/6-2.mp4");  //¿µ»ó °æ·Î
+    VideoCapture capture("d:/6-2.mp4");  //ì˜ìƒ ê²½ë¡œ
     if (!capture.isOpened()) {
         exit(EXIT_FAILURE);
     }
 
     while (capture.read(frame0)) {
 
-        faces = detectFace(frame0); // ¾ó±¼s ÁÂÇ¥ Ã£±â.
-        pMOG2->apply(frame0, frame1); // Â÷ ¿µ»ó. binary(frame1).
-        medianBlur(frame1, frame2, 3); // ³ëÀÌÁîÁ¦°ÅÇÑ binary(frame2)
-        result = frame0.clone();    //ÅëÇÕº» È­¸é
+        faces = detectFace(frame0); // ì–¼êµ´s ì¢Œí‘œ ì°¾ê¸°.
+        pMOG2->apply(frame0, frame1); // ì°¨ ì˜ìƒ. binary(frame1).
+        medianBlur(frame1, frame2, 3); // ë…¸ì´ì¦ˆì œê±°í•œ binary(frame2)
+        result = frame0.clone();    //í†µí•©ë³¸ í™”ë©´
 
-        drawFace(faces, result); // °á°úÃ¢¿¡ ¾ó±¼s ¿µ¿ª ±×¸®±â.
+        drawFace(faces, result); // ê²°ê³¼ì°½ì— ì–¼êµ´s ì˜ì—­ ê·¸ë¦¬ê¸°.
         if (faces.size() > 0) {
-            start = 1;  //¾ó±¼ÀÌ ÀÎ½ÄµÇ´Â °æ¿ìÀÇ º¯¼ö
+            start = 1;  //ì–¼êµ´ì´ ì¸ì‹ë˜ëŠ” ê²½ìš°ì˜ ë³€ìˆ˜
             roiArray = setRoi(faces);
             if (cnt >= 8) {
                 saveFace(faces, frame0);
@@ -59,9 +60,174 @@ int main() {
         }
 
         timer_e = clock();
-        duration = (double)(timer_e - timer_s) / CLOCKS_PER_SEC;     //½Ã°£ Â÷¸¦ ÅëÇØ Á¤È®µµ¸¦ ³ôÀÓ.
+        duration = (double)(timer_e - timer_s) / CLOCKS_PER_SEC;     //ì‹œê°„ ì°¨ë¥¼ í†µí•´ ì •í™•ë„ë¥¼ ë†’ì„.
 
-        if ((start == 1) && (duration > 0.2)) {     //¾ó±¼ÀÌ Å½Áö µÇ°í ¿¬±â¸¦ »Õ´Â ¼Óµµ¸¦ ÅëÇØ Å½Áö
+        if ((start == 1) && (duration > 0.2)) {     //ì–¼êµ´ì´ íƒì§€ ë˜ê³  ì—°ê¸°ë¥¼ ë¿œëŠ” ì†ë„ë¥¼ í†µí•´ íƒì§€
+            detectSmoke(roiArray, frame2, result);
+            timer_s = clock();
+        }
+
+        if (cnt >= 8) {
+            putText(result, "Violators are subject to a fine of 100,000won.", Point(50, 400), FONT_HERSHEY_PLAIN, 2.0, Scalar(0, 0, 255), 2);
+        }
+
+        // PlaySoundê°€ ì‹¤í–‰ ì¤‘ì¼ ë•Œì—ë„ ì˜ìƒì´ ê³„ì† ì§„í–‰ë˜ë„ë¡ ë³„ë„ì˜ ìŠ¤ë ˆë“œì—ì„œ ì‹¤í–‰
+        if (cnt == 8 && tr == 0) {
+            tr++;   //PlaySoundì™€ ê´€ë ¨ëœ ì•Œë¦¼ ì œì–´ ë³€ìˆ˜
+            thread soundThread(playSoundAsync);  // ë³„ë„ì˜ ìŠ¤ë ˆë“œì—ì„œ ì•ˆë‚´ ë°©ì†¡ ì‹¤í–‰
+            soundThread.detach();  // ìŠ¤ë ˆë“œë¥¼ ë¶„ë¦¬í•˜ì—¬ ë¹„ë™ê¸°ì ìœ¼ë¡œ ì‹¤í–‰ë˜ê²Œ í•¨
+        }
+
+        imshow("frame2", frame2);
+        imshow("result", result);
+
+        if (waitKey(1) == 27) break; // esc ì…ë ¥ì‹œ ì¢…ë£Œ.
+    }
+}
+
+void playSoundAsync() {
+    PlaySound(TEXT("D:\\Alarm.wav"), NULL, SND_SYNC);  // ì•ˆë‚´ ë°©ì†¡ì„ ë™ê¸°ì ìœ¼ë¡œ ì‹¤í–‰í•˜ë˜ ë©”ì¸ ìŠ¤ë ˆë“œëŠ” ì˜ìƒ ì²˜ë¦¬ë¥¼ ê³„ì†
+}
+
+vector<Rect> detectFace(Mat frame0) {
+    CascadeClassifier face_classifier;
+    vector <Rect> faces;
+    Mat grayframe;
+
+    face_classifier.load("C:/opencv/sources/data/haarcascades/haarcascade_frontalface_alt.xml");
+    cvtColor(frame0, grayframe, COLOR_BGR2GRAY);
+    face_classifier.detectMultiScale(grayframe, faces, 1.1, 3, 0, Size(30, 30));
+    return faces;
+}
+
+vector<vector<Rect>> setRoi(vector<Rect> faces) {
+    vector<vector<Rect>> roiArray;
+    for (int i = 0; i < faces.size(); i++) { //íƒì§€ëœ ì–¼êµ´ë§Œí¼ ë°˜ë³µ. ì–¼êµ´ í•˜ë‚˜ë©´ í•œë²ˆë§Œ ìˆ˜í–‰ë¨.
+        vector<Rect> roi;
+
+        roi.push_back(Rect(faces[i].x - faces[i].width, faces[i].y, faces[i].width, faces[i].height));
+        roi.push_back(Rect(faces[i].x - faces[i].width, faces[i].y - faces[i].height, faces[i].width, faces[i].height));
+        roi.push_back(Rect(faces[i].x, faces[i].y - faces[i].height, faces[i].width, faces[i].height));
+        roi.push_back(Rect(faces[i].x + faces[i].width, faces[i].y - faces[i].height, faces[i].width, faces[i].height));
+        roi.push_back(Rect(faces[i].x + faces[i].width, faces[i].y, faces[i].width, faces[i].height));
+
+        roiArray.push_back(roi);
+    }
+    return roiArray;
+}
+
+void detectSmoke(vector<vector<Rect>> roiArray, Mat frame2, Mat frame0) {
+    for (int i = 0; i < roiArray.size(); i++) {
+        for (int j = 0; j < roiArray[i].size(); j++) {
+            Scalar s = sum(frame2(roiArray[i][j]) / 255);
+            cout << ((s[0] / roiArray[i][j].width) / roiArray[i][j].height) * 100 << "%" << endl;
+            cout << "cnt : " << cnt << endl;
+
+            if ((((s[0] / roiArray[i][j].width) / roiArray[i][j].height) * 100) > 20) {
+                rectangle(frame0, roiArray[i][0], Scalar(255, 0, 0), 3, 4, 0);
+                rectangle(frame0, roiArray[i][1], Scalar(255, 0, 0), 3, 4, 0);
+                rectangle(frame0, roiArray[i][2], Scalar(255, 0, 0), 3, 4, 0);
+                rectangle(frame0, roiArray[i][3], Scalar(255, 0, 0), 3, 4, 0);
+                rectangle(frame0, roiArray[i][4], Scalar(255, 0, 0), 3, 4, 0);
+                rectangle(frame0, roiArray[i][j], Scalar(0, 0, 255), 3, 4, 0);
+                putText(frame0, "Smoke detection", Point(300, 300), FONT_HERSHEY_PLAIN, 2.0, 255, 2);
+                cnt++;
+            }
+        }
+    }
+}
+
+void drawFace(vector<Rect> faces, Mat result) {
+    int i;
+    for (i = 0; i < faces.size(); i++) {                    //íƒì§€ëœ ì–¼êµ´ë§Œí¼ ë°˜ë³µ. ì–¼êµ´ í•˜ë‚˜ë©´ í•œë²ˆë§Œ ìˆ˜í–‰ë¨
+        Point lb(faces[i].x + faces[i].width, faces[i].y + faces[i].height);
+        Point tr(faces[i].x, faces[i].y);
+        rectangle(result, lb, tr, Scalar(0, 255, 0), 3, 4, 0);
+        putText(result, "Face detection", Point(200, 200), FONT_HERSHEY_PLAIN, 2.0, 255, 2);
+    }
+}
+
+void saveSmoke(vector<Rect> faces, Mat result) {
+    int i;
+    for (i = 0; i < faces.size(); i++) {                    //íƒì§€ëœ ì–¼êµ´ë§Œí¼ ë°˜ë³µ. ì–¼êµ´ í•˜ë‚˜ë©´ í•œë²ˆë§Œ ìˆ˜í–‰ë¨
+        Mat output = result(faces[i]);
+        imwrite("d:/output/smoke.jpg", output);  // í¡ì—°ëœ ì´ë¯¸ì§€ë¥¼ ì €ì¥
+    }
+}
+
+void saveFace(vector<Rect> faces, Mat result) {
+    int i;
+    for (i = 0; i < faces.size(); i++) {                    //íƒì§€ëœ ì–¼êµ´ë§Œí¼ ë°˜ë³µ. ì–¼êµ´ í•˜ë‚˜ë©´ í•œë²ˆë§Œ ìˆ˜í–‰ë¨
+        Mat output = result(faces[i]);
+        imwrite("d:/output/face.jpg", output);  // ì–¼êµ´ ì´ë¯¸ì§€ë¥¼ ì €ì¥
+    }
+}
+
+/*
+#include <opencv2/opencv.hpp>   
+#include <Windows.h>      
+#include <iostream>
+#include <stdio.h>
+
+#pragma comment(lib,"winmm.lib")  //PlaySoundë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ winmm ë¼ì´ë¸ŒëŸ¬ë¦¬ ì‚¬ìš©
+#define CRT_SECURE_NO_WARNINGS
+
+using namespace std;
+using namespace cv;
+
+#define CAM_WIDTH 480
+#define CAM_HEIGHT 240
+CascadeClassifier face_cascade;
+
+int cnt = 0;   //ì—°ê¸° íƒì§€ íšŸìˆ˜
+vector<Rect> detectFace(Mat fram0);  // ì–¼êµ´ íƒì§€ í•¨ìˆ˜ 
+vector<vector<Rect>> setRoi(vector<Rect> faces);   // ì–¼êµ´ ì£¼ë³€ì˜ Roi ì„¤ì •
+void drawFace(vector<Rect> faces, Mat frame0);  //íƒì§€ëœ ì–¼êµ´ ë°˜ë³µ íƒì§€ í•¨ìˆ˜
+void detectSmoke(vector<vector<Rect>> roiArray, Mat frame2, Mat frame0);  // ì—°ê¸° íƒì§€ í•¨ìˆ˜
+void saveSmoke(vector<Rect> faces, Mat frame0); //í¡ì—°ì‹œ í¡ì—°í–‰ìœ„ ì €ì¥í•¨ìˆ˜
+void saveFace(vector<Rect> faces, Mat frame0); //í¡ì—°ì‹œ í¡ì—°ì ì–¼êµ´ ì €ì¥í•¨ìˆ˜
+
+int main() {
+    Mat frame0, frame1, frame2, result; // 0: raw, 1: binary(MOG2), 2:binary(MOG2)ì—ì„œ ì¶”ê°€ ë…¸ì´ì¦ˆì œê±°
+    Ptr<BackgroundSubtractor> pMOG2; //MOG2 ë°°ê²½ ì‚­ì œ ê°ì²´
+    vector<Rect> faces; // ì–¼êµ´ ì¢Œí‘œ.
+    vector<vector<Rect>> roiArray; //roi
+
+    int start = 0;
+    int tr = 0; 
+
+    clock_t timer_s, timer_e;
+    double duration;
+    timer_s = clock();  //í˜„ì¬ í”„ë¡œì„¸ìŠ¤ê°€ ì‹¤í–‰ë˜ê³  ì§€ê¸ˆê¹Œì§€ ì§„í–‰ë˜ì–´ ì˜¨ ms
+
+
+    pMOG2 = createBackgroundSubtractorMOG2();
+    VideoCapture capture("d:/6-2.mp4");  //ì˜ìƒ ê²½ë¡œ
+    if (!capture.isOpened()) {
+        exit(EXIT_FAILURE);
+    }
+
+    while (capture.read(frame0)) {
+
+        faces = detectFace(frame0); // ì–¼êµ´s ì¢Œí‘œ ì°¾ê¸°.
+        pMOG2->apply(frame0, frame1); // ì°¨ ì˜ìƒ. binary(frame1).
+        medianBlur(frame1, frame2, 3); // ë…¸ì´ì¦ˆì œê±°í•œ binary(frame2)
+        result = frame0.clone();    //í†µí•©ë³¸ í™”ë©´
+
+        drawFace(faces, result); // ê²°ê³¼ì°½ì— ì–¼êµ´s ì˜ì—­ ê·¸ë¦¬ê¸°.
+        if (faces.size() > 0) {
+            start = 1;  //ì–¼êµ´ì´ ì¸ì‹ë˜ëŠ” ê²½ìš°ì˜ ë³€ìˆ˜
+            roiArray = setRoi(faces);
+            if (cnt >= 8) {
+                saveFace(faces, frame0);
+                saveSmoke(faces, frame0);
+            }
+        }
+
+        timer_e = clock();
+        duration = (double)(timer_e - timer_s) / CLOCKS_PER_SEC;     //ì‹œê°„ ì°¨ë¥¼ í†µí•´ ì •í™•ë„ë¥¼ ë†’ì„.
+
+        if ((start == 1) && (duration > 0.2)) {     //ì–¼êµ´ì´ íƒì§€ ë˜ê³  ì—°ê¸°ë¥¼ ë¿œëŠ” ì†ë„ë¥¼ í†µí•´ íƒì§€
             detectSmoke(roiArray, frame2, result);
             timer_s = clock();
 
@@ -71,13 +237,13 @@ int main() {
         }
         if (cnt == 8 && tr == 0) {
             PlaySound(TEXT("D:\\Alarm.wav"), NULL, SND_SYNC);
-            tr++;   //PlaySound¿Í °ü·ÃµÈ ¾Ë¸² Á¦¾î º¯¼ö 
+            tr++;   //PlaySoundì™€ ê´€ë ¨ëœ ì•Œë¦¼ ì œì–´ ë³€ìˆ˜ 
         }
 
         imshow("frame2", frame2);
         imshow("result", result);
 
-        if (waitKey(1) == 27)break; // esc ÀÔ·Â½Ã Á¾·á.
+        if (waitKey(1) == 27)break; // esc ì…ë ¥ì‹œ ì¢…ë£Œ.
     }
 }
 
@@ -94,7 +260,7 @@ vector<Rect> detectFace(Mat frame0) {
 
 vector<vector<Rect>> setRoi(vector<Rect> faces) {
     vector<vector<Rect>> roiArray;
-    for (int i = 0; i < faces.size(); i++) { //Å½ÁöµÈ ¾ó±¼¸¸Å­ ¹İº¹. ¾ó±¼ ÇÏ³ª¸é ÇÑ¹ø¸¸ ¼öÇàµÊ.
+    for (int i = 0; i < faces.size(); i++) { //íƒì§€ëœ ì–¼êµ´ë§Œí¼ ë°˜ë³µ. ì–¼êµ´ í•˜ë‚˜ë©´ í•œë²ˆë§Œ ìˆ˜í–‰ë¨.
         vector<Rect> roi;
 
         roi.push_back(Rect(faces[i].x - faces[i].width, faces[i].y, faces[i].width, faces[i].height));
@@ -132,7 +298,7 @@ void detectSmoke(vector<vector<Rect>> roiArray, Mat frame2, Mat frame0) {
 
 void drawFace(vector<Rect> faces, Mat result) {
     int i;
-    for (i = 0; i < faces.size(); i++) {                    //Å½ÁöµÈ ¾ó±¼¸¸Å­ ¹İº¹. ¾ó±¼ ÇÏ³ª¸é ÇÑ¹ø¸¸ ¼öÇàµÊ
+    for (i = 0; i < faces.size(); i++) {                    //íƒì§€ëœ ì–¼êµ´ë§Œí¼ ë°˜ë³µ. ì–¼êµ´ í•˜ë‚˜ë©´ í•œë²ˆë§Œ ìˆ˜í–‰ë¨
         Point lb(faces[i].x + faces[i].width, faces[i].y + faces[i].height);
         Point tr(faces[i].x, faces[i].y);
         rectangle(result, lb, tr, Scalar(0, 255, 0), 3, 4, 0);
@@ -145,7 +311,7 @@ void saveSmoke(vector<Rect> faces, Mat result) {
     for (i = 0; i < faces.size(); i++) {
         Rect select(faces[i].x, faces[i].y, faces[i].width, faces[i].height);
         Mat faceROI = result(select);
-        imwrite("C:/Users/82107/source/repos/Project_JSH/result.jpg", result); //»çÁøÀÌ ÀúÀåµÇ´Â °æ·Î
+        imwrite("C:/Users/82107/source/repos/Project_JSH/result.jpg", result); //ì‚¬ì§„ì´ ì €ì¥ë˜ëŠ” ê²½ë¡œ
     }
 }
 
@@ -154,6 +320,7 @@ void saveFace(vector<Rect> faces, Mat frame0) {
     for (i = 0; i < faces.size(); i++) {
         Rect select(faces[i].x, faces[i].y, faces[i].width, faces[i].height);
         Mat faceROI = frame0(select);
-        imwrite("C:/Users/82107/source/repos/Project_JSH/WhoAreYou.jpg", frame0); //»çÁøÀÌ ÀúÀåµÇ´Â °æ·Î
+        imwrite("C:/Users/82107/source/repos/Project_JSH/WhoAreYou.jpg", frame0); //ì‚¬ì§„ì´ ì €ì¥ë˜ëŠ” ê²½ë¡œ
     }
 }
+*/
